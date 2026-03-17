@@ -5616,19 +5616,10 @@ class VoteFreeAdminApp(ctk.CTk):
         if not qid:
             messagebox.showwarning("提示", "请选择问卷。", parent=self)
             return
-        q = self.service.get_questionnaire(qid)
+        q = self.service.get_questionnaire_for_offline_export(qid)
         if not q:
             messagebox.showerror("失败", "问卷不存在。", parent=self)
             return
-        schema_questions = q.get("schema", {}).get("questions", []) if isinstance(q.get("schema"), dict) else []
-        needs_roster_data = q.get("auth_mode", "open") != "open"
-        if needs_roster_data:
-            roster_id = str(q.get("auth_roster_id", "")).strip()
-            if not roster_id:
-                messagebox.showerror("失败", "该问卷需要名单数据（名单校验），但未绑定名单。", parent=self)
-                return
-            q = dict(q)
-            q["offline_auth_members"] = self.service.list_roster_members(roster_id, limit=100000)
         out = Path(self.offline_path_var.get().strip())
         if out.suffix.lower() != ".html":
             out = out.with_suffix(".html")

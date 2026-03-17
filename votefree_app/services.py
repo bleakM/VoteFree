@@ -314,6 +314,21 @@ class VoteFreeService:
     def get_questionnaire(self, questionnaire_id: str) -> Optional[Dict[str, Any]]:
         return self.db.get_questionnaire(questionnaire_id)
 
+    def get_questionnaire_for_offline_export(self, questionnaire_id: str) -> Optional[Dict[str, Any]]:
+        questionnaire = self.get_questionnaire(questionnaire_id)
+        if not questionnaire:
+            return None
+        out = dict(questionnaire)
+        auth_mode = str(out.get("auth_mode", "open")).strip().lower() or "open"
+        if auth_mode == "open":
+            out["offline_auth_members"] = []
+            return out
+        roster_id = str(out.get("auth_roster_id", "")).strip()
+        if not roster_id:
+            raise ServiceError("该问卷启用了名单校验，但未绑定名单。")
+        out["offline_auth_members"] = self.list_roster_members(roster_id, limit=100000)
+        return out
+
     def rename_questionnaire(self, questionnaire_id: str, new_title: str) -> int:
         qid = str(questionnaire_id or "").strip()
         title = str(new_title or "").strip()

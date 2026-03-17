@@ -730,7 +730,7 @@ class WebAdminShell:
                 payload: Dict[str, Any] = request.get_json(silent=True) or {}
                 questionnaire_id = str(payload.get("questionnaire_id", "")).strip()
                 output_path = self._resolve_output_path(str(payload.get("output_path", "")), f"offline_{questionnaire_id or 'form'}.html")
-                questionnaire = self.service.get_questionnaire(questionnaire_id)
+                questionnaire = self.service.get_questionnaire_for_offline_export(questionnaire_id)
                 if not questionnaire:
                     return self._json_error("问卷不存在。", 404)
                 out = export_offline_html(questionnaire, self.service.crypto.public_key_spki_b64(), output_path)
