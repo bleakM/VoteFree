@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VoteFree 问卷入口</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='survey.css') }}" />
+</head>
+<body class="vf-bg">
+  <main class="vf-wrap">
+    <section class="vf-card">
+      <h1 class="vf-title">VoteFree 问卷入口</h1>
+      <p class="vf-subtitle">请选择要填写的问卷。</p>
+      {% if questionnaires %}
+      <div class="vf-list">
+        {% for q in questionnaires %}
+        <a class="vf-list-item" href="{{ url_for('questionnaire_page', questionnaire_id=q.id) }}">
+          <div>
+            <strong>{{ q.title }}</strong>
+            <p>{{ q.description }}</p>
+          </div>
+          <span>进入</span>
+        </a>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="vf-empty">当前没有开放问卷。</p>
+      {% endif %}
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ title }} - VoteFree</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='survey.css') }}" />
+</head>
+<body class="vf-bg">
+  <main class="vf-wrap">
+    <section class="vf-card">
+      <h1 class="vf-title">{{ title }}</h1>
+      <p class="vf-subtitle">{{ description }}</p>
+      <span class="vf-pill">局域网实时提交 · 加密存储</span>
+    </section>
+
+    <section id="passcodeCard" class="vf-card {% if not passcode_enabled or unlocked %}vf-hidden{% endif %}">
+      <h2 style="margin-top:0">访问口令</h2>
+      <p class="vf-subtitle">请输入问卷口令后开始填写。</p>
+      <input id="vfPasscodeInput" type="text" placeholder="输入口令" />
+      <div class="vf-actions">
+        <button class="vf-btn vf-btn-primary" id="vfUnlockBtn">进入问卷</button>
+      </div>
+      <p id="vfUnlockStatus" class="vf-status"></p>
+    </section>
+
+    <section id="verifyCard" class="vf-card vf-hidden">
+      <h2 style="margin-top:0">身份验证</h2>
+      <p class="vf-subtitle" id="vfVerifyHint">请先完成身份验证后再填写问卷。</p>
+      <div id="vfVerifyFields"></div>
+      <div class="vf-actions">
+        <button class="vf-btn vf-btn-primary" id="vfVerifyBtn">验证身份</button>
+      </div>
+      <p id="vfVerifyStatus" class="vf-status"></p>
+    </section>
+
+    <section id="surveyCard" class="vf-card vf-hidden">
+      <div id="vfIdentityWrap"></div>
+      <form id="vfForm"></form>
+      <div class="vf-actions">
+        <button class="vf-btn vf-btn-primary" type="button" id="vfSubmitBtn">提交问卷</button>
+        <button class="vf-btn vf-btn-ghost" type="button" id="vfResetBtn">清空</button>
+      </div>
+      <p id="vfStatusBox" class="vf-status"></p>
+    </section>
+  </main>
+
+  <script>
+    window.VF_CONTEXT = {
+      questionnaireId: "{{ questionnaire_id }}",
+      passcodeEnabled: {{ "true" if passcode_enabled else "false" }},
+      passcodeUnlocked: {{ "true" if unlocked else "false" }},
+      authRequired: {{ "true" if auth_required else "false" }},
+    };
+  </script>
+  <script src="{{ url_for('static', filename='survey.js') }}"></script>
+</body>
+</html>

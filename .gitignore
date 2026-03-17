@@ -1,0 +1,53 @@
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# =========================
+# Build outputs
+# =========================
+build/
+dist/
+release_blank/
+release/
+*.zip
+!README*.zip
+
+# PyInstaller temp
+*.toc
+*.manifest
+
+# =========================
+# Runtime data (MUST NOT publish)
+# =========================
+data/
+back/data/
+*.vote
+*.db
+*.sqlite
+*.sqlite3
+*.pem
+*.key
+*.crt
+
+# Logs
+*.log

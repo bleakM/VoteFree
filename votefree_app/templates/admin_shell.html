@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ app_name }} 管理端</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin_shell.css') }}" />
+</head>
+<body>
+  <main class="as-shell">
+    <header class="as-top as-card">
+      <div>
+        <h1 class="as-title">{{ app_name }} 管理端</h1>
+      </div>
+      <div class="as-actions">
+        <button id="topRefreshBtn" class="as-btn">刷新全部</button>
+      </div>
+    </header>
+
+    <section id="authCard" class="as-card">
+      <h2 id="authTitle" class="as-h2">管理员认证</h2>
+      <div class="as-row">
+        <div>
+          <label class="as-label">管理员密码</label>
+          <input id="passwordInput" type="password" placeholder="请输入管理员密码" />
+        </div>
+      </div>
+      <div class="as-actions">
+        <button id="initBtn" class="as-btn as-btn-primary">初始化并解锁</button>
+        <button id="unlockBtn" class="as-btn as-btn-primary">解锁</button>
+      </div>
+      <p id="authStatus" class="as-status"></p>
+    </section>
+
+    <section id="mainSection" class="as-hidden">
+      <nav class="as-tabs" id="tabNav">
+        <button class="as-tab is-active" data-tab="dashboard">概览</button>
+        <button class="as-tab" data-tab="questionnaire">问卷管理</button>
+        <button class="as-tab" data-tab="roster">名单管理</button>
+        <button class="as-tab" data-tab="server">局域网服务</button>
+        <button class="as-tab" data-tab="offline">离线模式</button>
+        <button class="as-tab" data-tab="votes">票据与SQL</button>
+        <button class="as-tab" data-tab="settings">设置</button>
+      </nav>
+
+      <section id="tab-dashboard" class="as-card as-tab-panel is-active">
+        <h2 class="as-h2">概览</h2>
+        <div class="as-grid-4">
+          <div class="as-stat"><span>问卷总数</span><strong id="statQuestionnaires">0</strong></div>
+          <div class="as-stat"><span>票据总数</span><strong id="statSubmissions">0</strong></div>
+          <div class="as-stat"><span>服务状态</span><strong id="statServer">未启动</strong></div>
+          <div class="as-stat"><span>名单总数</span><strong id="statRosters">0</strong></div>
+        </div>
+        <pre id="dashboardText" class="as-console"></pre>
+      </section>
+
+      <section id="tab-questionnaire" class="as-card as-tab-panel">
+        <h2 class="as-h2">问卷管理</h2>
+        <div class="as-grid-2">
+          <div class="as-card as-card-muted">
+            <label class="as-label">问卷列表与状态管理</label>
+            <button id="qOpenListModalBtn" class="as-btn as-btn-primary">打开问卷列表</button>
+          </div>
+          <div class="as-card as-card-muted">
+            <label class="as-label">问卷配置</label>
+            <button id="qOpenEditorModalBtn" class="as-btn as-btn-primary">问卷配置</button>
+          </div>
+        </div>
+        <div class="as-card as-card-muted as-mt8">
+          <label class="as-label">问卷工具</label>
+          <div class="as-tool-row">
+            <div class="as-actions">
+              <button id="qListManageBtn" class="as-btn">列表管理</button>
+              <button id="qRuleManageBtn" class="as-btn">联合规则</button>
+              <button id="qLogicManageBtn" class="as-btn">逻辑面板</button>
+              <button id="qCheckPanelBtn" class="as-btn">体检结果</button>
+            </div>
+            <div class="as-actions as-end">
+              <button id="qNewDraftBtn" class="as-btn">新建空白</button>
+              <button id="qAddQuestionBtn" class="as-btn">添加普通题</button>
+              <button id="qAddLoopBtn" class="as-btn">添加循环块</button>
+              <button id="qSaveDraftBtn" class="as-btn as-btn-primary">保存问卷</button>
+            </div>
+          </div>
+          <button id="qLoadDraftBtn" class="as-btn as-hidden">载入选中问卷到编辑器</button>
+        </div>
+        <div id="qManageListPanel" class="as-block as-mt8 as-hidden as-modal">
+          <div class="as-modal-head">
+            <h4 class="as-h2">问卷列表与状态管理</h4>
+            <button id="qListAreaCloseBtn" class="as-btn">关闭</button>
+          </div>
+          <div class="as-split-2">
+            <div>
+              <label class="as-label">问卷列表</label>
+              <table class="as-table">
+                <thead><tr><th>ID</th><th>标题</th><th>模式</th><th>状态</th></tr></thead>
+                <tbody id="questionnaireRows"></tbody>
+              </table>
+            </div>
+            <div>
+              <label class="as-label">操作</label>
+              <p class="as-label">当前：<span id="selectedQuestionnaire">未选择</span></p>
+              <div class="as-grid-2">
+                <button id="qOpenBtn" class="as-btn">载入编辑</button>
+                <button id="qActiveBtn" class="as-btn">启用</button>
+                <button id="qPauseBtn" class="as-btn">暂停</button>
+                <button id="qRefreshBtn" class="as-btn">刷新</button>
+                <button id="qRenameBtn" class="as-btn">重命名</button>
+                <button id="qCopyBtn" class="as-btn">复制</button>
+                <button id="qDeleteBtn" class="as-btn">删除</button>
+                <button id="qDesignerBtn" class="as-btn as-hidden">配置体检</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="qManageEditorPanel" class="as-editor as-mt8 as-hidden as-modal">
+          <div class="as-modal-head">
+            <h4 class="as-h2">编辑器配置区（展板上方）</h4>
+            <button id="qEditorAreaCloseBtn" class="as-btn">关闭</button>
+          </div>
+          <h3 class="as-h2">问卷基础配置</h3>
+          <div class="as-grid-4">
+            <div><label class="as-label">问卷标题</label><input id="qDraftTitle" class="as-input" /></div>
+            <div><label class="as-label">访问口令</label><input id="qDraftPasscode" class="as-input" /></div>
+            <div><label class="as-label">校验模式</label>
+              <select id="qDraftAuthMode" class="as-input">
+                <option value="open">开放作答</option>
+                <option value="roster_code">名单校验（编号）</option>
+                <option value="roster_name_code">名单校验（姓名+编号）</option>
+                <option value="roster_fields">名单校验（自定义字段）</option>
+              </select>
+            </div>
+            <div><label class="as-label">绑定名单</label><select id="qDraftRoster" class="as-input"></select></div>
+          </div>
+          <div class="as-grid-2 as-mt8">
+            <div><label class="as-label">问卷说明</label><textarea id="qDraftDesc" class="as-textarea"></textarea></div>
+            <div><label class="as-label">引导文案</label><textarea id="qDraftIntro" class="as-textarea"></textarea></div>
+          </div>
+          <div class="as-grid-2 as-mt8">
+            <div>
+              <label class="as-label">进入前采集字段（逗号分隔）</label>
+              <input id="qDraftCollectFields" class="as-input" placeholder="例如：姓名,学号,班级" />
+              <div class="as-actions as-mt8">
+                <button id="qCollectConfigBtn" class="as-btn">配置采集字段</button>
+                <button id="qCollectFromRosterBtn" class="as-btn">从名单字段填入</button>
+                <button id="qCollectClearBtn" class="as-btn">清空采集字段</button>
+              </div>
+            </div>
+            <div class="as-actions as-end">
+              <label class="as-inline"><input id="qDraftAllowRepeat" type="checkbox" /> 允许重复提交</label>
+              <label class="as-inline"><input id="qDraftAllowSameDevice" type="checkbox" /> 允许同设备重复提交</label>
+            </div>
+          </div>
+          <div class="as-grid-4 as-mt8">
+            <div>
+              <label class="as-label">模板</label>
+              <select id="qTemplateSelect" class="as-input"></select>
+            </div>
+            <div class="as-actions as-end">
+              <button id="qTemplateApplyBtn" class="as-btn">加载到编辑器</button>
+              <button id="qTemplateCreateBtn" class="as-btn">直接创建并启用</button>
+            </div>
+            <div></div>
+            <div class="as-actions as-end">
+              <button id="qCheckDraftBtn" class="as-btn">执行体检</button>
+              <button id="qRefreshBoardBtn" class="as-btn">刷新展板</button>
+            </div>
+          </div>
+        </div>
+        <div class="as-block as-mt8 as-board-host">
+          <div class="as-block-head">
+            <h4 class="as-block-title">问卷展板</h4>
+          </div>
+          <div id="qBoardCanvas" class="as-board"></div>
+          <pre id="qDraftStatus" class="as-console as-mt8"></pre>
+        </div>
+        <div id="qListPanel" class="as-block as-mt8 as-hidden as-modal">
+          <div class="as-modal-head">
+            <h4 class="as-h2">列表管理</h4>
+            <button id="qListCloseTopBtn" class="as-btn">关闭</button>
+          </div>
+          <div class="as-split-2">
+            <div>
+              <table class="as-table">
+                <thead><tr><th>名称</th><th>类型</th><th>来源</th><th>项数</th></tr></thead>
+                <tbody id="qListRows"></tbody>
+              </table>
+              <div class="as-actions as-mt8">
+                <button id="qListNewBtn" class="as-btn">新建列表</button>
+                <button id="qListDeleteBtn" class="as-btn">删除选中</button>
+                <button id="qListImportRosterBtn" class="as-btn">按名单字段填入</button>
+                <button id="qListCloseBtn" class="as-btn">关闭</button>
+              </div>
+            </div>
+            <div>
+              <div class="as-grid-2">
+                <div><label class="as-label">列表名称</label><input id="qListName" class="as-input" /></div>
+                <div><label class="as-label">列表类型</label><select id="qListType" class="as-input"><option value="text">文本</option><option value="number">数字</option></select></div>
+              </div>
+              <label class="as-label as-mt8">列表项（每行一个，格式：键|显示名，或仅填写键）</label>
+              <textarea id="qListItems" class="as-textarea"></textarea>
+              <div class="as-actions as-end as-mt8"><button id="qListSaveBtn" class="as-btn as-btn-primary">保存列表</button></div>
+            </div>
+          </div>
+        </div>
+        <div id="qRulePanel" class="as-block as-mt8 as-hidden as-modal">
+          <div class="as-modal-head">
+            <h4 class="as-h2">联合规则</h4>
+            <button id="qRuleCloseTopBtn" class="as-btn">关闭</button>
+          </div>
+          <div class="as-label">自动限制：<code id="qRuleSuffix"></code></div>
+          <div class="as-rule-layout as-mt8">
+            <div>
+              <label class="as-label">联合规则可用项目（与票据统计一致）</label>
+              <pre id="qRuleSchemaText" class="as-console as-console-small as-model-console"></pre>
+              <label class="as-label as-mt8">规则列表</label>
+              <table class="as-table">
+                <thead><tr><th>名称</th><th>比较</th><th>目标值</th><th>消息</th></tr></thead>
+                <tbody id="qRuleRows"></tbody>
+              </table>
+              <div class="as-actions as-mt8">
+                <button id="qRuleNewBtn" class="as-btn">新建规则</button>
+                <button id="qRuleDeleteBtn" class="as-btn">删除规则</button>
+                <button id="qRuleUpBtn" class="as-btn">上移</button>
+                <button id="qRuleDownBtn" class="as-btn">下移</button>
+                <button id="qRuleCloseBtn" class="as-btn">关闭</button>
+              </div>
+            </div>
+            <div>
+              <div class="as-grid-3">
+                <div><label class="as-label">规则名称</label><input id="qRuleName" class="as-input" /></div>
+                <div><label class="as-label">比较方式</label>
+                  <select id="qRuleOp" class="as-input">
+                    <option value="equals">等于</option>
+                    <option value="not_equals">不等于</option>
+                    <option value="gt">大于</option>
+                    <option value="gte">大于等于</option>
+                    <option value="lt">小于</option>
+                    <option value="lte">小于等于</option>
+                    <option value="between">区间内</option>
+                    <option value="not_between">区间外</option>
+                  </select>
+                </div>
+                <div><label class="as-label">目标值/上限值</label><input id="qRuleValue" class="as-input" placeholder="例如：3 或 3,5" /></div>
+              </div>
+              <label class="as-label as-mt8">SQL（仅 1 条 SELECT，建议返回 1 个数字）</label>
+              <textarea id="qRuleSql" class="as-textarea"></textarea>
+              <label class="as-label as-mt8">失败提示</label>
+              <input id="qRuleMessage" class="as-input" />
+              <div class="as-actions as-mt8">
+                <button id="qRuleSampleAvgBtn" class="as-btn">示例：平均</button>
+                <button id="qRuleSampleCountBtn" class="as-btn">示例：人数</button>
+                <button id="qRuleSampleJoinBtn" class="as-btn">示例：JOIN</button>
+                <button id="qRuleSampleRangeBtn" class="as-btn">示例：区间</button>
+                <button id="qRuleSaveBtn" class="as-btn as-btn-primary">保存当前规则</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="qLogicPanel" class="as-block as-mt8 as-hidden as-modal">
+          <div class="as-modal-head">
+            <h4 class="as-h2">逻辑面板</h4>
+            <button id="qLogicCloseBtn" class="as-btn">关闭</button>
+          </div>
+          <p class="as-label">当前目标：<span id="qLogicTarget">未选择</span></p>
+          <div class="as-grid-3">
+            <div><label class="as-label">条件来源题目ID</label><input id="qLogicSourceQid" class="as-input" /></div>
+            <div><label class="as-label">比较方式</label>
+              <select id="qLogicOp" class="as-input">
+                <option value="equals">等于</option>
+                <option value="not_equals">不等于</option>
+                <option value="contains">包含</option>
+                <option value="gt">大于</option>
+                <option value="gte">大于等于</option>
+                <option value="lt">小于</option>
+                <option value="lte">小于等于</option>
+                <option value="not_empty">不为空</option>
+                <option value="empty">为空</option>
+              </select>
+            </div>
+            <div><label class="as-label">比较值</label><input id="qLogicValue" class="as-input" /></div>
+          </div>
+          <div class="as-grid-2 as-mt8">
+            <div>
+              <label class="as-label">循环项筛选（循环块内题）</label>
+              <select id="qLogicRepeatFilter" class="as-input">
+                <option value="all">全部</option>
+                <option value="self">仅本人</option>
+                <option value="peer">仅他人</option>
+              </select>
+            </div>
+            <div class="as-actions as-end">
+              <button id="qLogicWriteVisibleBtn" class="as-btn">写入显示条件</button>
+              <button id="qLogicWriteRequiredBtn" class="as-btn">写入必填条件</button>
+            </div>
+          </div>
+          <div class="as-grid-2 as-mt8">
+            <div><label class="as-label">显示条件预览</label><pre id="qLogicVisiblePreview" class="as-console as-console-small"></pre></div>
+            <div><label class="as-label">必填条件预览</label><pre id="qLogicRequiredPreview" class="as-console as-console-small"></pre></div>
+          </div>
+          <div class="as-actions as-end as-mt8">
+            <button id="qLogicSaveBtn" class="as-btn">保存逻辑</button>
+            <button id="qLogicClearBtn" class="as-btn">清空逻辑</button>
+          </div>
+        </div>
+        <div id="qCheckPanel" class="as-block as-mt8 as-hidden as-modal">
+          <div class="as-modal-head">
+            <h4 class="as-h2">配置体检结果</h4>
+            <button id="qCheckCloseBtn" class="as-btn">关闭</button>
+          </div>
+          <pre id="qCheckOutput" class="as-console"></pre>
+        </div>
+      </section>
+      <div id="qModalBackdrop" class="as-modal-backdrop as-hidden"></div>
+      <div id="qErrorPanel" class="as-block as-hidden as-modal">
+        <div class="as-modal-head">
+          <h4 id="qErrorTitle" class="as-h2">错误提示</h4>
+          <button id="qErrorCloseBtn" class="as-btn">关闭</button>
+        </div>
+        <pre id="qErrorText" class="as-console"></pre>
+      </div>
+
+      <section id="tab-roster" class="as-card as-tab-panel">
+        <h2 class="as-h2">名单管理</h2>
+        <div class="as-split-2">
+          <div>
+            <label class="as-label">名单列表</label>
+            <table class="as-table">
+              <thead><tr><th>ID</th><th>名称</th><th>成员数</th></tr></thead>
+              <tbody id="rosterRows"></tbody>
+            </table>
+            <div class="as-grid-2 as-mt8">
+              <button id="rCreateBtn" class="as-btn">新建名单</button>
+              <button id="rRefreshBtn" class="as-btn">刷新名单</button>
+              <button id="rColumnsBtn" class="as-btn">配置字段</button>
+              <button id="rRenameBtn" class="as-btn">重命名</button>
+              <button id="rCopyBtn" class="as-btn">复制</button>
+              <button id="rDeleteBtn" class="as-btn">删除</button>
+            </div>
+          </div>
+          <div>
+            <label class="as-label">成员列表（当前名单：<span id="selectedRoster">未选择</span>）</label>
+            <table class="as-table">
+              <thead><tr id="memberHeadRow"><th>行ID</th><th>唯一键</th></tr></thead>
+              <tbody id="memberRows"></tbody>
+            </table>
+            <div class="as-grid-2 as-mt8">
+              <button id="mAddBtn" class="as-btn">手工新增成员</button>
+              <button id="mRemoveBtn" class="as-btn">删除选中成员</button>
+              <button id="mRefreshBtn" class="as-btn">刷新成员</button>
+            </div>
+            <div class="as-actions as-mt8">
+              <input id="rosterImportFile" type="file" accept=".csv,.xlsx,.xlsm" />
+              <label class="as-inline"><input id="rosterReplaceAll" type="checkbox" /> 覆盖原成员</label>
+              <button id="rImportBtn" class="as-btn">导入名单</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="tab-server" class="as-card as-tab-panel">
+        <h2 class="as-h2">局域网服务</h2>
+        <div class="as-grid-4">
+          <div><label class="as-label">监听地址</label><input id="serverHost" class="as-input" /></div>
+          <div><label class="as-label">端口</label><input id="serverPort" class="as-input" /></div>
+          <div><label class="as-label">默认问卷</label><select id="serverQ" class="as-input"></select></div>
+          <div class="as-actions as-end">
+            <button id="serverStartBtn" class="as-btn as-btn-primary">启动服务</button>
+            <button id="serverStopBtn" class="as-btn">停止服务</button>
+          </div>
+        </div>
+        <div class="as-split-2 as-mt8">
+          <div>
+            <div class="as-actions">
+              <button id="serverOpenHomeBtn" class="as-btn">打开首页</button>
+              <button id="serverOpenQBtn" class="as-btn">打开默认问卷</button>
+              <button id="serverRefreshBtn" class="as-btn">刷新状态</button>
+              <button id="serverCopyLinkBtn" class="as-btn">复制链接</button>
+            </div>
+            <pre id="serverInfo" class="as-console"></pre>
+          </div>
+          <div>
+            <label class="as-label">扫码打开问卷</label>
+            <div class="as-qr-wrap"><img id="serverQr" alt="二维码" /></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="tab-offline" class="as-card as-tab-panel">
+        <h2 class="as-h2">离线模式</h2>
+        <div class="as-grid-2">
+          <div><label class="as-label">选择问卷</label><select id="offlineQ" class="as-input"></select></div>
+          <div><label class="as-label">导出路径</label><input id="offlinePath" class="as-input" /></div>
+        </div>
+        <div class="as-actions">
+          <button id="offlineChoosePathBtn" class="as-btn">选择路径</button>
+          <button id="offlineExportBtn" class="as-btn as-btn-primary">导出离线 HTML</button>
+          <button id="offlineOpenDirBtn" class="as-btn">打开导出目录</button>
+        </div>
+        <pre id="offlineLog" class="as-console"></pre>
+      </section>
+
+      <section id="tab-votes" class="as-card as-tab-panel">
+        <h2 class="as-h2">票据与SQL</h2>
+        <div class="as-grid-4">
+          <div><label class="as-label">选择问卷</label><select id="votesQ" class="as-input"></select></div>
+          <div class="as-actions as-end"><button id="subRefreshBtn" class="as-btn">刷新票据</button></div>
+          <div class="as-actions as-end"><button id="sqlSchemaBtn" class="as-btn">刷新查询模型</button></div>
+          <div class="as-actions as-end"><button id="subRejectBtn" class="as-btn">驳回选中票据</button></div>
+        </div>
+        <div class="as-actions as-mt8">
+          <input id="voteImportFile" type="file" accept=".vote" />
+          <button id="voteImportBtn" class="as-btn">导入 .vote</button>
+        </div>
+        <div class="as-votes-layout as-mt8">
+          <div>
+            <label class="as-label">查询数据模型（只读）</label>
+            <pre id="sqlSchemaText" class="as-console as-console-small as-model-console"></pre>
+            <label class="as-label as-mt8">查询模板列表</label>
+            <div class="as-grid-2 as-mt8">
+              <select id="sqlViewSelect" class="as-input"></select>
+              <div class="as-actions">
+                <button id="sqlLoadViewBtn" class="as-btn">加载模板</button>
+                <button id="sqlDeleteViewBtn" class="as-btn">删除模板</button>
+              </div>
+            </div>
+            <label class="as-label as-mt8">票据列表</label>
+            <table class="as-table">
+              <thead><tr><th>票据ID</th><th>提交时间</th><th>来源</th><th>填写者</th></tr></thead>
+              <tbody id="submissionRows"></tbody>
+            </table>
+          </div>
+          <div>
+            <label class="as-label">SQL 查询（仅 SELECT，可多条语句）</label>
+            <textarea id="sqlEditor" class="as-textarea"></textarea>
+            <div class="as-actions">
+              <button id="sqlRunBtn" class="as-btn as-btn-primary">执行查询</button>
+              <button id="sqlSaveViewBtn" class="as-btn">保存为模板</button>
+              <button id="payloadPreviewBtn" class="as-btn">查看原始票据</button>
+              <input id="sqlExportPath" class="as-input as-input-inline" placeholder="导出CSV路径" />
+              <button id="sqlExportBtn" class="as-btn">导出查询CSV</button>
+            </div>
+            <pre id="sqlConsole" class="as-console"></pre>
+          </div>
+        </div>
+      </section>
+
+      <section id="tab-settings" class="as-card as-tab-panel">
+        <h2 class="as-h2">设置</h2>
+        <div class="as-block as-card-muted as-mt8">
+          <label class="as-label">界面内核</label>
+          <div class="as-actions">
+            <span id="runtimeKernelText" class="as-label">当前：网页内核</span>
+            <button id="switchKernelBtn" class="as-btn">切换到 tkinter 内核</button>
+          </div>
+        </div>
+        <div class="as-block as-card-muted as-mt8">
+          <label class="as-label">界面主题</label>
+          <label class="as-inline"><input id="darkModeToggle" type="checkbox" /> 深色模式（全界面反转色）</label>
+        </div>
+        <div class="as-grid-3">
+          <div><label class="as-label">旧密码</label><input id="oldPwd" type="password" class="as-input" /></div>
+          <div><label class="as-label">新密码</label><input id="newPwd" type="password" class="as-input" /></div>
+          <div><label class="as-label">确认新密码</label><input id="newPwd2" type="password" class="as-input" /></div>
+        </div>
+        <div class="as-actions">
+          <button id="changePwdBtn" class="as-btn as-btn-primary">更新管理员密码</button>
+        </div>
+        <div class="as-grid-2 as-mt8">
+          <div><label class="as-label">备份文件路径</label><input id="backupPath" class="as-input" /></div>
+          <div class="as-actions as-end"><button id="backupBtn" class="as-btn">创建数据备份</button></div>
+        </div>
+      </section>
+    </section>
+
+    <div id="toast" class="as-toast as-hidden"></div>
+  </main>
+
+  <script src="{{ url_for('static', filename='admin_shell.js') }}"></script>
+</body>
+</html>
